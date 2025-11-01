@@ -480,14 +480,14 @@ public class FileShareApp extends JFrame {
             return;
         }
         
-        // Check if file is selected
+        // Check if file is selected - if not, browse first
         if (selectedFile == null) {
-            JOptionPane.showMessageDialog(this,
-                "Please select a file first by dragging it to the drop zone\nor clicking the drop zone to browse.",
-                "No File Selected",
-                JOptionPane.INFORMATION_MESSAGE);
+            logStatus("No file selected. Opening file browser...");
             browseForFile();
-            return;
+            // If still no file selected after browsing, return
+            if (selectedFile == null) {
+                return;
+            }
         }
         
         if (!selectedFile.exists()) {
@@ -503,6 +503,8 @@ public class FileShareApp extends JFrame {
         }
         
         logStatus("🔍 Searching for receivers on the network...");
+        sendButton.setEnabled(false);
+        sendButton.setText("Searching...");
         
         // Start discovery in background thread
         new Thread(() -> {
@@ -510,6 +512,9 @@ public class FileShareApp extends JFrame {
                 broadcastService.discoverReceivers(3000); // 3 second discovery timeout
                 
                 SwingUtilities.invokeLater(() -> {
+                    sendButton.setEnabled(true);
+                    sendButton.setText("Send File");
+                    
                     if (discoveredReceivers.isEmpty()) {
                         logStatus("❌ No receivers found on the network");
                         JOptionPane.showMessageDialog(this,
@@ -525,6 +530,10 @@ public class FileShareApp extends JFrame {
                     }
                 });
             } catch (Exception e) {
+                SwingUtilities.invokeLater(() -> {
+                    sendButton.setEnabled(true);
+                    sendButton.setText("Send File");
+                });
                 logStatus("ERROR during discovery: " + e.getMessage());
                 e.printStackTrace();
             }
@@ -538,16 +547,29 @@ public class FileShareApp extends JFrame {
         // Create custom dialog
         JDialog dialog = new JDialog(this, "Select Receiver", true);
         dialog.setLayout(new BorderLayout(10, 10));
-        dialog.setSize(400, 300);
+        dialog.setSize(450, 350);
         dialog.setLocationRelativeTo(this);
         
         JPanel contentPanel = new JPanel(new BorderLayout(10, 10));
         contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         contentPanel.setBackground(BACKGROUND_COLOR);
         
-        JLabel titleLabel = new JLabel("Select a device to send to:");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        // Title with file info
+        String fileName = selectedFile != null ? selectedFile.getName() : "No file";
+        String fileSize = selectedFile != null ? formatFileSize(selectedFile.length()) : "";
+        JLabel titleLabel = new JLabel("<html><b>Send:</b> " + fileName + " <span style='color: gray;'>(" + fileSize + ")</span></html>");
+        titleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         titleLabel.setForeground(TEXT_COLOR);
+        
+        JLabel subtitleLabel = new JLabel("Select a device to send to:");
+        subtitleLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        subtitleLabel.setForeground(TEXT_COLOR);
+        subtitleLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
+        
+        JPanel headerPanel = new JPanel(new BorderLayout(5, 5));
+        headerPanel.setOpaque(false);
+        headerPanel.add(titleLabel, BorderLayout.NORTH);
+        headerPanel.add(subtitleLabel, BorderLayout.SOUTH);
         
         // Create list of receivers
         DefaultListModel<String> listModel = new DefaultListModel<>();
@@ -557,10 +579,25 @@ public class FileShareApp extends JFrame {
         
         JList<String> receiverList = new JList<>(listModel);
         receiverList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        receiverList.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        receiverList.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         receiverList.setBackground(CARD_COLOR);
         receiverList.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         receiverList.setSelectedIndex(0);
+        receiverList.setFixedCellHeight(40);
+        
+        // Double-click to send
+        receiverList.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    int index = receiverList.locationToIndex(e.getPoint());
+                    if (index >= 0) {
+                        receiverList.setSelectedIndex(index);
+                        sendToSelectedReceiver(dialog, listModel, receiverList);
+                    }
+                }
+            }
+        });
         
         JScrollPane listScroll = new JScrollPane(receiverList);
         listScroll.setBorder(BorderFactory.createLineBorder(BORDER_COLOR, 1));
@@ -572,36 +609,57 @@ public class FileShareApp extends JFrame {
         cancelButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         cancelButton.addActionListener(e -> dialog.dispose());
         
+        // ESC to close
+        dialog.getRootPane().registerKeyboardAction(
+            e -> dialog.dispose(),
+            KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
+            JComponent.WHEN_IN_FOCUSED_WINDOW
+        );
+        
         JButton sendButton = createStyledButton("Send File", PRIMARY_COLOR, PRIMARY_DARK);
         sendButton.setPreferredSize(new Dimension(120, 35));
-        sendButton.addActionListener(e -> {
-            int selectedIndex = receiverList.getSelectedIndex();
-            if (selectedIndex >= 0) {
-                String selected = listModel.get(selectedIndex);
-                // Extract IP:PORT from "📱 IP:PORT"
-                String ipPort = selected.substring(2); // Remove emoji
-                ReceiverInfo receiver = discoveredReceivers.get(ipPort);
-                if (receiver != null && selectedFile != null) {
-                    dialog.dispose();
-                    fileSender.sendFile(selectedFile, receiver);
-                    // Reset file selection after sending
-                    selectedFile = null;
-                    dropZoneLabel.setText("Drop file here or click to browse");
-                    dropZoneLabel.setForeground(TEXT_SECONDARY);
-                    dropZonePanel.setBackground(new Color(245, 248, 250));
-                }
-            }
-        });
+        sendButton.addActionListener(e -> sendToSelectedReceiver(dialog, listModel, receiverList));
+        
+        // ENTER to send
+        dialog.getRootPane().registerKeyboardAction(
+            e -> sendToSelectedReceiver(dialog, listModel, receiverList),
+            KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0),
+            JComponent.WHEN_IN_FOCUSED_WINDOW
+        );
         
         buttonPanel.add(cancelButton);
         buttonPanel.add(sendButton);
         
-        contentPanel.add(titleLabel, BorderLayout.NORTH);
+        contentPanel.add(headerPanel, BorderLayout.NORTH);
         contentPanel.add(listScroll, BorderLayout.CENTER);
         contentPanel.add(buttonPanel, BorderLayout.SOUTH);
         
         dialog.add(contentPanel);
+        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         dialog.setVisible(true);
+    }
+    
+    /**
+     * Send file to the selected receiver
+     */
+    private void sendToSelectedReceiver(JDialog dialog, DefaultListModel<String> listModel, JList<String> receiverList) {
+        int selectedIndex = receiverList.getSelectedIndex();
+        if (selectedIndex >= 0) {
+            String selected = listModel.get(selectedIndex);
+            // Extract IP:PORT from "📱 IP:PORT"
+            String ipPort = selected.substring(2).trim(); // Remove emoji and trim
+            ReceiverInfo receiver = discoveredReceivers.get(ipPort);
+            if (receiver != null && selectedFile != null) {
+                dialog.dispose();
+                logStatus("📤 Sending to " + receiver.getIp() + ":" + receiver.getPort() + "...");
+                fileSender.sendFile(selectedFile, receiver);
+                // Reset file selection after sending
+                selectedFile = null;
+                dropZoneLabel.setText("Drop file here or click to browse");
+                dropZoneLabel.setForeground(TEXT_SECONDARY);
+                dropZonePanel.setBackground(new Color(245, 248, 250));
+            }
+        }
     }
     
     /**
