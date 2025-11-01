@@ -1,0 +1,34 @@
+# Compiled class files
+*.class
+
+# Binary directory
+bin/
+
+# Received files directory
+ReceivedFiles/
+
+# Package Files
+*.jar
+*.war
+*.ear
+
+# IDE specific files
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# OS specific files
+.DS_Store
+Thumbs.db
+*~
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
