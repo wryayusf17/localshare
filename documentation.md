@@ -27,12 +27,12 @@ The application will operate in two distinct modes (Sender/Receiver) and utilize
 1. **Discovery Protocol (UDP Broadcast):**  
    * **Purpose:** Fast, stateless announcement of the receiver's presence and initial address exchange.  
    * **Receiver Action:** Continuously listen for incoming broadcast messages from potential Senders looking for a service. *Self-Correction: Based on the user workflow (Receiver broadcasts, Sender finds), the Receiver must actively broadcast its presence periodically.*  
-     * **Message:** {"action": "PRESENCE", "ip": "192.168.1.5", "port": 5000} (JSON string or simple delimited string).  
+     * **Message:** {"action": "PRESENCE", "ip": "192.168.1.5", "port": 5050} (JSON string or simple delimited string).  
      * **Port:** Dedicated UDP Broadcast Port (e.g., 8888).  
    * **Sender Action:** Listens for the presence messages on the broadcast port (8888) until a suitable target is found.  
 2. **Transfer Protocol (TCP Socket):**  
    * **Purpose:** Reliable, connection-oriented file transfer.  
-   * **Receiver Action:** A ServerSocket listens on a dedicated TCP Port (e.g., 5000). When connected, a new dedicated thread handles the file reception.  
+   * **Receiver Action:** A ServerSocket listens on a dedicated TCP Port (e.g., 5050). When connected, a new dedicated thread handles the file reception.  
    * **Sender Action:** Creates a Socket connection to the Receiver's IP and Port (extracted from the UDP message).
 
 ### **B. Core Class/Module Structure**
@@ -59,7 +59,7 @@ The agent must create four Java classes and implement the logic in sequential or
 
 1. **Reception Folder (R1):** Define a constant for the receiving directory (LOCAL\_SHARE\_DIR \= "ReceivedFiles").  
    * In the constructor/initialization, check if this folder exists. If not, create it using Files.createDirectories() or new File().mkdirs().  
-2. **TCP Listener (R3):** Create a Runnable or a dedicated thread to run a ServerSocket on a chosen port (e.g., 5000).  
+2. **TCP Listener (R3):** Create a Runnable or a dedicated thread to run a ServerSocket on a chosen port (e.g., 5050).  
 3. **Connection Handling:** Inside the listener loop, call serverSocket.accept(). Upon connection:  
    * Spawn a new ReceiverHandler thread to process the incoming file stream.  
    * The main FileReceiver thread immediately returns to serverSocket.accept() to listen for the next connection.  
@@ -106,13 +106,13 @@ The agent must create four Java classes and implement the logic in sequential or
 
 1. **Error Handling:** Implement try-catch-finally blocks extensively for all network and file I/O operations (R3, R4). Ensure sockets and file handles are closed reliably in the finally block to prevent resource leaks.  
 2. **Multi-Threading:** All blocking network calls (accept(), read(), write(), receive(), send()) **must** be executed in background threads to prevent the GUI from freezing. Use SwingWorker or standard Thread/ExecutorService with proper thread synchronization.  
-3. **Firewall Consideration:** Document that the application requires the specific TCP (e.g., 5000\) and UDP (e.g., 8888\) ports to be open in the host machine's firewall.
+3. **Firewall Consideration:** Document that the application requires the specific TCP (e.g., 5050\) and UDP (e.g., 8888\) ports to be open in the host machine's firewall.
 
 ## **6\. Variables and Constants (To be defined in the code)**
 
 | Constant Name | Value Example | Usage |
 | :---- | :---- | :---- |
-| TCP\_PORT | 5000 | Port for reliable file transfer. |
+| TCP\_PORT | 5050 | Port for reliable file transfer. |
 | UDP\_PORT | 8888 | Port for network discovery/broadcast. |
 | BROADCAST\_ADDRESS | "255.255.255.255" | The general broadcast address. |
 | LOCAL\_SHARE\_DIR | "./ReceivedFiles" | The local folder for saving received data. |

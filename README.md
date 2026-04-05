@@ -19,7 +19,7 @@ A robust, cross-platform Java application for securely sharing files over a Loca
    - Receiver broadcasts PRESENCE messages every 2 seconds
    - Sender listens for broadcasts to find available receivers
 
-2. **TCP Socket (Port 5000)**: File transfer
+2. **TCP Socket (Port 5050)**: File transfer
    - Reliable, connection-oriented data transfer
    - File metadata protocol: filename length → filename → file size → file data
 
@@ -36,7 +36,7 @@ A robust, cross-platform Java application for securely sharing files over a Loca
 - Network connectivity (LAN)
 - Firewall configuration to allow:
   - UDP port 8888 (broadcasting)
-  - TCP port 5000 (file transfer)
+  - TCP port 5050 (file transfer)
 
 ## Compilation
 
@@ -76,7 +76,7 @@ java -cp bin FileShareApp
 
 1. Click the **"Start Receiving"** button
 2. The application will:
-   - Start listening for incoming files on TCP port 5000
+   - Start listening for incoming files on TCP port 5050
    - Broadcast its presence on the network every 2 seconds
    - Create a `ReceivedFiles` folder if it doesn't exist
 3. Wait for incoming files
@@ -113,14 +113,14 @@ Make sure to allow the following ports through your firewall:
 **Linux (ufw)**:
 ```bash
 sudo ufw allow 8888/udp
-sudo ufw allow 5000/tcp
+sudo ufw allow 5050/tcp
 ```
 
 **Windows Firewall**:
 - Go to Windows Defender Firewall → Advanced Settings
 - Create inbound rules for:
   - UDP port 8888
-  - TCP port 5000
+  - TCP port 5050
 
 **macOS**:
 ```bash
@@ -154,9 +154,9 @@ localshare/
 
 ### Connection refused during transfer
 
-- Verify TCP port 5000 is open on the receiver
+- Verify TCP port 5050 is open on the receiver
 - Check that the receiver is still in "receiving" mode
-- Ensure no other application is using port 5000
+- Ensure no other application is using port 5050
 
 ### Files not appearing in ReceivedFiles folder
 

@@ -30,8 +30,9 @@ public class BroadcastService {
     
     /**
      * Start broadcasting PRESENCE messages (Receiver mode)
+     * @param actualTcpPort the actual TCP port the receiver is listening on
      */
-    public void startBroadcasting() throws IOException {
+    public void startBroadcasting(int actualTcpPort) throws IOException {
         if (isBroadcasting) {
             return;
         }
@@ -39,13 +40,10 @@ public class BroadcastService {
         isBroadcasting = true;
         broadcastScheduler = Executors.newSingleThreadScheduledExecutor();
         
-        // Get TCP port from FileReceiver
-        int tcpPort = FileReceiver.TCP_PORT;
-        
         // Start periodic broadcast
         broadcastScheduler.scheduleAtFixedRate(() -> {
             try {
-                sendPresenceMessage(tcpPort);
+                sendPresenceMessage(actualTcpPort);
             } catch (Exception e) {
                 app.logStatus("Broadcast error: " + e.getMessage());
             }
@@ -82,16 +80,16 @@ public class BroadcastService {
             
             // Get local IP address
             String localIp = getLocalIpAddress();
+            String hostName = getLocalHostName();
             
-            // Create message: "LOCALSHARE_PRESENCE:192.168.1.5:5000"
-            String message = PRESENCE_PREFIX + localIp + ":" + tcpPort;
+            // Create message: "LOCALSHARE_PRESENCE:192.168.1.5:5050:DeviceName"
+            String message = PRESENCE_PREFIX + localIp + ":" + tcpPort + ":" + hostName;
             byte[] buffer = message.getBytes();
             
             InetAddress broadcastAddr = InetAddress.getByName(BROADCAST_ADDRESS);
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length, broadcastAddr, UDP_PORT);
             
             tempSocket.send(packet);
-            app.logStatus("DEBUG: Sent PRESENCE: " + message);
         } finally {
             if (tempSocket != null && !tempSocket.isClosed()) {
                 tempSocket.close();
@@ -118,7 +116,7 @@ public class BroadcastService {
             discoverySocket.setReuseAddress(true);
             discoverySocket.bind(new InetSocketAddress(UDP_PORT));
             discoverySocket.setBroadcast(true);
-            discoverySocket.setSoTimeout(timeoutMs);
+            discoverySocket.setSoTimeout(500); // Short per-receive timeout so elapsed time check works
             
             app.logStatus("Listening for receivers on UDP port " + UDP_PORT + "...");
             
@@ -134,8 +132,8 @@ public class BroadcastService {
                     parsePresenceMessage(message);
                     
                 } catch (SocketTimeoutException e) {
-                    // Timeout reached, exit loop
-                    break;
+                    // Short timeout expired, loop will check elapsed time
+                    continue;
                 }
             }
             
@@ -150,22 +148,22 @@ public class BroadcastService {
     }
     
     /**
-     * Parse a PRESENCE message and extract IP and port
-     * Format: "LOCALSHARE_PRESENCE:192.168.1.5:5000"
+     * Parse a PRESENCE message and extract IP, port, and hostname
+     * Format: "LOCALSHARE_PRESENCE:192.168.1.5:5050:DeviceName"
      */
     private void parsePresenceMessage(String message) {
         try {
             if (message.startsWith(PRESENCE_PREFIX)) {
                 String data = message.substring(PRESENCE_PREFIX.length());
-                String[] parts = data.split(":");
+                String[] parts = data.split(":", 3);
                 
-                if (parts.length == 2) {
+                if (parts.length >= 2) {
                     String ip = parts[0];
                     int port = Integer.parseInt(parts[1]);
+                    String hostName = (parts.length >= 3 && !parts[2].isEmpty()) ? parts[2] : ip;
                     
                     // Always add discovered receivers (allow localhost for testing)
-                    app.addDiscoveredReceiver(ip, port);
-                    app.logStatus("DEBUG: Parsed PRESENCE from " + ip + ":" + port);
+                    app.addDiscoveredReceiver(ip, port, hostName);
                 }
             }
         } catch (Exception e) {
@@ -202,6 +200,22 @@ public class BroadcastService {
         }
     }
     
+    /**
+     * Get the local hostname of this machine
+     */
+    private String getLocalHostName() {
+        try {
+            String hostName = InetAddress.getLocalHost().getHostName();
+            // Remove .local suffix common on macOS
+            if (hostName.endsWith(".local")) {
+                hostName = hostName.substring(0, hostName.length() - 6);
+            }
+            return hostName;
+        } catch (Exception e) {
+            return "Unknown Device";
+        }
+    }
+
     /**
      * Check if an IP address is a local address of this machine
      */

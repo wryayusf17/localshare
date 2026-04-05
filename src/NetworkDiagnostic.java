@@ -7,7 +7,7 @@ import java.io.*;
  */
 public class NetworkDiagnostic {
     private static final int UDP_PORT = 8888;
-    private static final int TCP_PORT = 5000;
+    private static final int TCP_PORT = 5050;
     
     public static void main(String[] args) {
         System.out.println("===========================================");

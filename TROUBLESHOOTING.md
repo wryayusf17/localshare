@@ -22,9 +22,9 @@ cd /home/wrya/Documents/github/localshare
 2. **CHECK THE STATUS LOG** - You MUST see these messages:
    ```
    [HH:MM:SS] Receiving mode started. Broadcasting presence on network...
-   [HH:MM:SS] TCP Server listening on port 5000
+   [HH:MM:SS] TCP Server listening on port 5050
    [HH:MM:SS] Broadcasting presence every 2000ms on UDP port 8888
-   [HH:MM:SS] DEBUG: Sent PRESENCE: LOCALSHARE_PRESENCE:192.168.0.123:5000
+   [HH:MM:SS] DEBUG: Sent PRESENCE: LOCALSHARE_PRESENCE:192.168.0.123:5050
    ```
 
 3. If you DON'T see "DEBUG: Sent PRESENCE", something is wrong - close and restart
@@ -45,8 +45,8 @@ cd /home/wrya/Documents/github/localshare
    ```
    [HH:MM:SS] Starting discovery to find receivers...
    [HH:MM:SS] Listening for receivers on UDP port 8888...
-   [HH:MM:SS] DEBUG: Parsed PRESENCE from 192.168.0.123:5000
-   [HH:MM:SS] Discovered receiver at 192.168.0.123:5000
+   [HH:MM:SS] DEBUG: Parsed PRESENCE from 192.168.0.123:5050
+   [HH:MM:SS] Discovered receiver at 192.168.0.123:5050
    [HH:MM:SS] Discovery completed.
    ```
 
@@ -82,7 +82,7 @@ java -cp bin NetworkDiagnostic
 **Expected Output:**
 ```
 ✓ UDP Port 8888 is AVAILABLE
-✓ TCP Port 5000 is AVAILABLE
+✓ TCP Port 5050 is AVAILABLE
 ✓ Broadcast message sent successfully
 ```
 
@@ -92,14 +92,14 @@ java -cp bin NetworkDiagnostic
 
 ### Error: "Address already in use"
 
-**Cause**: Port 5000 or 8888 is in use
+**Cause**: Port 5050 or 8888 is in use
 
 **Solution 1**: Close all LocalShare instances and wait 30 seconds
 
 **Solution 2**: Kill the process
 ```bash
 # Find what's using the port
-sudo lsof -i :5000
+sudo lsof -i :5050
 sudo lsof -i :8888
 
 # Kill it
@@ -160,11 +160,11 @@ sudo ifconfig vmnet8 up
 [15:30:00] Application initialized. Ready to send or receive files.
 [15:30:05] Receiving mode started. Broadcasting presence on network...
 [15:30:05] Reception folder exists: /home/wrya/Documents/github/localshare/ReceivedFiles
-[15:30:05] TCP Server listening on port 5000
+[15:30:05] TCP Server listening on port 5050
 [15:30:05] Broadcasting presence every 2000ms on UDP port 8888
-[15:30:05] DEBUG: Sent PRESENCE: LOCALSHARE_PRESENCE:192.168.0.123:5000
-[15:30:07] DEBUG: Sent PRESENCE: LOCALSHARE_PRESENCE:192.168.0.123:5000
-[15:30:09] DEBUG: Sent PRESENCE: LOCALSHARE_PRESENCE:192.168.0.123:5000
+[15:30:05] DEBUG: Sent PRESENCE: LOCALSHARE_PRESENCE:192.168.0.123:5050
+[15:30:07] DEBUG: Sent PRESENCE: LOCALSHARE_PRESENCE:192.168.0.123:5050
+[15:30:09] DEBUG: Sent PRESENCE: LOCALSHARE_PRESENCE:192.168.0.123:5050
 ```
 
 ### Sender Log Should Show:
@@ -172,8 +172,8 @@ sudo ifconfig vmnet8 up
 [15:30:20] Application initialized. Ready to send or receive files.
 [15:30:25] Starting discovery to find receivers...
 [15:30:25] Listening for receivers on UDP port 8888...
-[15:30:26] DEBUG: Parsed PRESENCE from 192.168.0.123:5000
-[15:30:26] Discovered receiver at 192.168.0.123:5000
+[15:30:26] DEBUG: Parsed PRESENCE from 192.168.0.123:5050
+[15:30:26] Discovered receiver at 192.168.0.123:5050
 [15:30:28] Discovery completed.
 ```
 

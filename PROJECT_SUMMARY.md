@@ -61,7 +61,7 @@ The **LocalShare** Java LAN File Sharing Application has been fully implemented 
   - Sender listens for 3 seconds to discover available receivers
   - Custom message format: `LOCALSHARE_PRESENCE:IP:PORT`
 
-- ✅ **TCP File Transfer** (Port 5000)
+- ✅ **TCP File Transfer** (Port 5050)
   - Reliable connection-oriented transfer
   - Custom protocol: filename length → filename → file size → data
   - 8KB buffer size for optimal performance
@@ -165,7 +165,7 @@ TCP Stream Format:
 
 ### Firewall Requirements
 - UDP Port 8888: Discovery broadcasts
-- TCP Port 5000: File transfer
+- TCP Port 5050: File transfer
 
 ### Future Enhancements
 - [ ] Encryption (TLS/SSL)

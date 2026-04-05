@@ -5,7 +5,7 @@
 ### Prerequisites
 - [ ] Java JDK 8+ installed (`java -version`)
 - [ ] Project compiled successfully (`./build.sh`)
-- [ ] Firewall configured (ports 5000 and 8888 open)
+- [ ] Firewall configured (ports 5050 and 8888 open)
 
 ## Test Suite
 
@@ -30,7 +30,7 @@
 
 4. Click "Send File" in the second window
 
-5. Select the receiver (should show 127.0.0.1:5000 or your local IP)
+5. Select the receiver (should show 127.0.0.1:5050 or your local IP)
 
 6. Choose a test file
 
@@ -168,7 +168,7 @@
 1. **Block ports**:
    ```bash
    sudo ufw deny 8888/udp
-   sudo ufw deny 5000/tcp
+   sudo ufw deny 5050/tcp
    ```
 
 2. Try to discover receivers
@@ -176,7 +176,7 @@
 3. **Open ports**:
    ```bash
    sudo ufw allow 8888/udp
-   sudo ufw allow 5000/tcp
+   sudo ufw allow 5050/tcp
    ```
 
 4. Try again
@@ -257,7 +257,7 @@ time ./send_test.sh testfile_10mb.bin
 ping 192.168.1.5
 
 # Check if ports are accessible
-nc -zv 192.168.1.5 5000  # TCP
+nc -zv 192.168.1.5 5050  # TCP
 nc -zuv 192.168.1.5 8888 # UDP
 ```
 
@@ -268,14 +268,14 @@ nc -zuv 192.168.1.5 8888 # UDP
 sudo tcpdump -i any -n udp port 8888
 
 # Monitor TCP connections
-sudo tcpdump -i any -n tcp port 5000
+sudo tcpdump -i any -n tcp port 5050
 ```
 
 ### Check Port Usage
 
 ```bash
-# See what's using port 5000
-sudo netstat -tulpn | grep 5000
+# See what's using port 5050
+sudo netstat -tulpn | grep 5050
 
 # See what's using port 8888
 sudo netstat -tulpn | grep 8888
@@ -286,10 +286,10 @@ sudo netstat -tulpn | grep 8888
 ## Common Issues & Solutions
 
 ### Issue: "Address already in use"
-**Solution**: Another application is using port 5000 or 8888
+**Solution**: Another application is using port 5050 or 8888
 ```bash
 # Find and kill the process
-sudo lsof -i :5000
+sudo lsof -i :5050
 sudo kill -9 <PID>
 ```
 
@@ -302,7 +302,7 @@ sudo kill -9 <PID>
 
 ### Issue: Connection refused
 **Solutions**:
-1. Verify TCP port 5000 is open
+1. Verify TCP port 5050 is open
 2. Check receiver is still running
 3. Try restarting receiver
 

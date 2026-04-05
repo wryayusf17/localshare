@@ -11,7 +11,8 @@ import java.util.concurrent.*;
  */
 public class FileReceiver {
     // Constants
-    public static final int TCP_PORT = 5000;
+    public static final int TCP_PORT = 5050;
+    private static final int TCP_PORT_ALT = 5051;
     private static final String LOCAL_SHARE_DIR = "ReceivedFiles";
     private static final int BUFFER_SIZE = 8192; // 8KB buffer for file transfer
     
@@ -20,6 +21,7 @@ public class FileReceiver {
     private ExecutorService executorService;
     private volatile boolean isReceiving = false;
     private Path receiveDirPath;
+    private int actualPort = TCP_PORT; // The port actually bound
     
     public FileReceiver(FileShareApp app) {
         this.app = app;
@@ -54,10 +56,17 @@ public class FileReceiver {
         }
         
         isReceiving = true;
-        serverSocket = new ServerSocket(TCP_PORT);
+        try {
+            serverSocket = new ServerSocket(TCP_PORT);
+            actualPort = TCP_PORT;
+            app.logStatus("TCP Server listening on port " + TCP_PORT);
+        } catch (java.net.BindException e) {
+            app.logStatus("Port " + TCP_PORT + " is in use, trying port " + TCP_PORT_ALT + "...");
+            serverSocket = new ServerSocket(TCP_PORT_ALT);
+            actualPort = TCP_PORT_ALT;
+            app.logStatus("TCP Server listening on port " + TCP_PORT_ALT);
+        }
         executorService = Executors.newCachedThreadPool();
-        
-        app.logStatus("TCP Server listening on port " + TCP_PORT);
         
         // Start accept loop in background thread
         executorService.submit(() -> {
@@ -81,6 +90,13 @@ public class FileReceiver {
                 }
             }
         });
+    }
+    
+    /**
+     * Get the actual port the server is bound to
+     */
+    public int getActualPort() {
+        return actualPort;
     }
     
     /**
@@ -153,6 +169,7 @@ public class FileReceiver {
                 int bytesRead;
                 
                 app.logStatus("Receiving file data...");
+                int lastProgress = 0;
                 
                 while (totalBytesRead < fileSize) {
                     int toRead = (int) Math.min(BUFFER_SIZE, fileSize - totalBytesRead);
@@ -167,10 +184,11 @@ public class FileReceiver {
                     
                     // Log progress every 10%
                     int progress = (int) ((totalBytesRead * 100) / fileSize);
-                    if (progress % 10 == 0 && bytesRead > 0) {
+                    if (progress >= lastProgress + 10) {
                         app.logStatus("Progress: " + progress + "% (" + 
                                     formatFileSize(totalBytesRead) + " / " + 
                                     formatFileSize(fileSize) + ")");
+                        lastProgress = progress;
                     }
                 }
                 

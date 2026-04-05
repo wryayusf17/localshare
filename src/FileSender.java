@@ -32,7 +32,7 @@ public class FileSender {
         }
         
         app.logStatus("Preparing to send: " + file.getName() + " to " + 
-                     receiver.getIp() + ":" + receiver.getPort());
+                     receiver.getDeviceName() + " (" + receiver.getIp() + ")");
         
         // Run transfer in background thread
         new Thread(() -> {
@@ -50,7 +50,7 @@ public class FileSender {
         
         try {
             // Connect to receiver
-            app.logStatus("Connecting to " + receiver.getIp() + ":" + receiver.getPort() + "...");
+            app.logStatus("Connecting to " + receiver.getDeviceName() + " (" + receiver.getIp() + ")...");
             socket = new Socket();
             socket.connect(new InetSocketAddress(receiver.getIp(), receiver.getPort()), CONNECTION_TIMEOUT);
             app.logStatus("Connected successfully!");

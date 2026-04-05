@@ -76,7 +76,7 @@
 - ✅ **Debug Logging**: Shows PRESENCE messages
 
 ### File Transfer
-- ✅ **TCP Protocol**: Reliable transfer (port 5000)
+- ✅ **TCP Protocol**: Reliable transfer (port 5050)
 - ✅ **Custom Protocol**: Filename → Size → Data
 - ✅ **Progress Tracking**: 10% increment updates
 - ✅ **Size Formatting**: B, KB, MB, GB display

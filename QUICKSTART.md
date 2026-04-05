@@ -48,8 +48,8 @@ sudo ufw allow 5000/tcp
 
 ### Check if ports are in use
 ```bash
-# Check if TCP port 5000 is available
-netstat -tuln | grep 5000
+# Check if TCP port 5050 is available
+netstat -tuln | grep 5050
 
 # Check if UDP port 8888 is available
 netstat -tuln | grep 8888
@@ -65,7 +65,7 @@ Received files are saved in: `ReceivedFiles/` directory (created automatically)
 - **Solution**: Ensure the receiver has clicked "Start Receiving" and both devices are on the same network
 
 **Problem**: "Connection refused"
-- **Solution**: Check firewall settings and ensure TCP port 5000 is open
+- **Solution**: Check firewall settings and ensure TCP port 5050 is open
 
 **Problem**: Compilation errors
 - **Solution**: Ensure you have JDK 8 or higher installed (`java -version`)
@@ -77,15 +77,15 @@ Device A (192.168.1.5):
 $ ./run.sh
 [Click "Start Receiving"]
 > [15:30:42] Receiving mode started. Broadcasting presence on network...
-> [15:30:42] TCP Server listening on port 5000
+> [15:30:42] TCP Server listening on port 5050
 
 Device B (192.168.1.10):
 $ ./run.sh
 [Click "Send File"]
 > [15:30:45] Starting discovery to find receivers...
-> [15:30:46] Discovered receiver at 192.168.1.5:5000
+> [15:30:46] Discovered receiver at 192.168.1.5:5050
 [Select receiver, choose file "photo.jpg"]
-> [15:30:50] Preparing to send: photo.jpg to 192.168.1.5:5000
+> [15:30:50] Preparing to send: photo.jpg to 192.168.1.5:5050
 > [15:30:51] Connected successfully!
 > [15:30:51] Sending file: photo.jpg (2.45 MB)
 > [15:30:52] Progress: 50% (1.23 MB / 2.45 MB)

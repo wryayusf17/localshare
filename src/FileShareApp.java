@@ -13,6 +13,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * Provides GUI interface with Send and Receive functionality
  */
 public class FileShareApp extends JFrame {
+    private static final long serialVersionUID = 1L;
+    
     // Constants
     private static final String APP_TITLE = "LocalShare";
     private static final int WINDOW_WIDTH = 700;
@@ -37,6 +39,7 @@ public class FileShareApp extends JFrame {
     private JLabel statusLabel;
     private JPanel dropZonePanel;
     private JLabel dropZoneLabel;
+    private JLabel statusDot;
     private File selectedFile = null;
     
     // Core components
@@ -249,7 +252,7 @@ public class FileShareApp extends JFrame {
         JPanel statusPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         statusPanel.setOpaque(false);
         
-        JLabel statusDot = new JLabel("●");
+        statusDot = new JLabel("●");
         statusDot.setFont(new Font("Segoe UI", Font.PLAIN, 20));
         statusDot.setForeground(TEXT_SECONDARY);
         
@@ -369,6 +372,7 @@ public class FileShareApp extends JFrame {
     /**
      * Enable drag-and-drop on a component
      */
+    @SuppressWarnings("unchecked")
     private void enableDragAndDrop(JPanel panel) {
         panel.setDropTarget(new DropTarget() {
             @Override
@@ -574,7 +578,7 @@ public class FileShareApp extends JFrame {
         // Create list of receivers
         DefaultListModel<String> listModel = new DefaultListModel<>();
         for (ReceiverInfo receiver : discoveredReceivers.values()) {
-            listModel.addElement("📱 " + receiver.getIp() + ":" + receiver.getPort());
+            listModel.addElement("📱 " + receiver.getDeviceName() + "  (" + receiver.getIp() + ")");
         }
         
         JList<String> receiverList = new JList<>(listModel);
@@ -645,13 +649,19 @@ public class FileShareApp extends JFrame {
     private void sendToSelectedReceiver(JDialog dialog, DefaultListModel<String> listModel, JList<String> receiverList) {
         int selectedIndex = receiverList.getSelectedIndex();
         if (selectedIndex >= 0) {
-            String selected = listModel.get(selectedIndex);
-            // Extract IP:PORT from "📱 IP:PORT"
-            String ipPort = selected.substring(2).trim(); // Remove emoji and trim
-            ReceiverInfo receiver = discoveredReceivers.get(ipPort);
+            // Find the matching receiver by index order
+            ReceiverInfo receiver = null;
+            int i = 0;
+            for (ReceiverInfo r : discoveredReceivers.values()) {
+                if (i == selectedIndex) {
+                    receiver = r;
+                    break;
+                }
+                i++;
+            }
             if (receiver != null && selectedFile != null) {
                 dialog.dispose();
-                logStatus("📤 Sending to " + receiver.getIp() + ":" + receiver.getPort() + "...");
+                logStatus("📤 Sending to " + receiver.getDeviceName() + " (" + receiver.getIp() + ")...");
                 fileSender.sendFile(selectedFile, receiver);
                 // Reset file selection after sending
                 selectedFile = null;
@@ -670,13 +680,14 @@ public class FileShareApp extends JFrame {
             // Start receiving
             try {
                 fileReceiver.startReceiving();
-                broadcastService.startBroadcasting();
+                broadcastService.startBroadcasting(fileReceiver.getActualPort());
                 isReceiving = true;
                 receiveButton.setText("Stop Receiving");
                 receiveButton.setBackground(new Color(234, 67, 53)); // Red
                 sendButton.setEnabled(false);
                 statusLabel.setText("Receiving...");
                 statusLabel.setForeground(SECONDARY_COLOR);
+                statusDot.setForeground(SECONDARY_COLOR);
                 logStatus("✅ Receiving mode started - Broadcasting presence on network");
             } catch (Exception e) {
                 logStatus("ERROR: Failed to start receiving - " + e.getMessage());
@@ -699,6 +710,7 @@ public class FileShareApp extends JFrame {
             sendButton.setEnabled(true);
             statusLabel.setText("Not receiving");
             statusLabel.setForeground(TEXT_SECONDARY);
+            statusDot.setForeground(TEXT_SECONDARY);
             logStatus("⏹ Receiving mode stopped");
         }
     }
@@ -717,10 +729,10 @@ public class FileShareApp extends JFrame {
     /**
      * Add a discovered receiver to the list
      */
-    public void addDiscoveredReceiver(String ip, int port) {
+    public void addDiscoveredReceiver(String ip, int port, String deviceName) {
         String key = ip + ":" + port;
-        discoveredReceivers.put(key, new ReceiverInfo(ip, port));
-        logStatus("Discovered receiver at " + key);
+        discoveredReceivers.put(key, new ReceiverInfo(ip, port, deviceName));
+        logStatus("Discovered receiver: " + deviceName + " (" + key + ")");
     }
     
     /**
@@ -754,10 +766,12 @@ public class FileShareApp extends JFrame {
     public static class ReceiverInfo {
         private final String ip;
         private final int port;
+        private final String deviceName;
         
-        public ReceiverInfo(String ip, int port) {
+        public ReceiverInfo(String ip, int port, String deviceName) {
             this.ip = ip;
             this.port = port;
+            this.deviceName = deviceName;
         }
         
         public String getIp() {
@@ -766,6 +780,10 @@ public class FileShareApp extends JFrame {
         
         public int getPort() {
             return port;
+        }
+        
+        public String getDeviceName() {
+            return deviceName;
         }
     }
 }
